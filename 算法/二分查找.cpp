@@ -22,7 +22,20 @@ int search(vector<int>& nums, int target) {
 
 // 69.x 的平方根
 int mySqrt(int x) {
-    if (x < 2) return x;
+    if (x < 1) return x;
+    int low = 1, high = x / 2;
+    while (low <= high) {
+        int mid = low + ((high - low) >> 1);
+        if (mid == x / mid)
+            return mid;
+        else if (mid < x / mid)
+            low = mid + 1;
+        else
+            high = mid - 1;
+    }
+    return high;
+
+    /* if (x < 2) return x;
     int low = 1, high = x / 2, last_mid;
     while (low <= high) {
         int mid = low + ((high - low) >> 1);
@@ -34,7 +47,7 @@ int mySqrt(int x) {
         } else
             high = mid - 1;
     }
-    return last_mid;
+    return last_mid; */
 }
 
 // 34.在排序数组中查找元素的第一个和最后一个位置
@@ -133,7 +146,7 @@ bool search(vector<int>& nums, int target) {
 // 153.寻找旋转排序数组中的最小值
 int findMin(vector<int>& nums) {
     int low = 0, high = nums.size() - 1;
-    while (low < high) {
+    while (low < high) {  //区间里至少有两个数以比较大小，区间只包含一个数时退出
         int mid = low + ((high - low) >> 1);
         if (nums[mid] < nums[high])  // right ordered
             high = mid;
@@ -172,4 +185,4 @@ int singleNonDuplicate(vector<int>& nums) {
 }
 
 // 4.寻找两个正序数组的中位数
-
+double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {}

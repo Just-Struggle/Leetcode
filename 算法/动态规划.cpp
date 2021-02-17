@@ -208,3 +208,72 @@ int maximalSquare(vector<vector<char>>& matrix) {
 
     return max_edge * max_edge;
 }
+
+// 53.最大子序和
+int maxSubArray(vector<int>& nums) {
+    int n = nums.size(), max_sum = nums[0], sum = nums[0];
+    for (int i = 1; i < n; ++i) {
+        sum = max(sum + nums[i], nums[i]);
+        max_sum = max(max_sum, sum);
+    }
+    return max_sum;
+
+    /* int n= nums.size(), max_sum = nums[0];
+    vector<int> dp(n, nums[0]);
+    for(int i = 1; i < n; ++i){
+        dp[i] = max(dp[i - 1] + nums[i], nums[i]);
+        max_sum = max(max_sum, dp[i]);
+    }
+    return max_sum; */
+}
+
+// 279.完全平方数
+int numSquares(int n) {
+    vector<int> dp(n + 1, INT_MAX);
+    dp[0] = 0;
+    for (int i = 1; i <= n; ++i) {
+        for (int j = 1; j * j <= i; ++j) {
+            dp[i] = min(dp[i], dp[i - j * j] + 1);
+        }
+    }
+    return dp[n];
+}
+
+// 139.单词拆分
+bool wordBreak(string s, vector<string>& wordDict) {
+    int n = s.length();
+    vector<bool> dp(n + 1, false);
+    dp[0] = true;
+    for (int i = 1; i <= n; ++i) {
+        for (const auto& word : wordDict) {
+            int len = word.length();
+            if (i >= len && word == s.substr(i - len, len))
+                dp[i] = dp[i] || dp[i - len];
+            if (dp[i]) break;
+        }
+    }
+    return dp[n];
+}
+
+// 343.整数拆分
+int integerBreak(int n) {
+    vector<int> dp(n + 1, 1);
+    for (int i = 3; i <= n; ++i) {
+        for (int j = 1; j * 2 <= i; ++j) {
+            dp[i] = max(dp[i], max(dp[i - j] * j, (i - j) * j));
+        }
+    }
+    return dp[n];
+}
+
+// 322.零钱兑换
+int coinChange(vector<int>& coins, int amount) {
+    vector<int> dp(amount + 1, INT_MAX - 1);
+    dp[0] = 0;
+    for (int i = 1; i <= amount; ++i) {
+        for (const auto& coin : coins) {
+            if (i >= coin) dp[i] = min(dp[i], dp[i - coin] + 1);
+        }
+    }
+    return dp[amount] == INT_MAX - 1 ? -1 : dp[amount];
+}
