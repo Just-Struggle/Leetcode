@@ -34,13 +34,17 @@ int climbStairs(int n) {
 int numDecodings(string s) {
     if (s[0] == '0') return 0;
     int n = s.length();
-    int pre = 1, cur = 1;
+    int pre = 1, cur = 1;  //空串解码方法为 1
     for (int i = 1; i < n; ++i) {
-        int tmp = cur;
+        int tmp = cur;  //暂存以 s[i - 1] 结尾的子串的解码方法数
+        //以 s[i] 结尾的子串，s[i] 单独解码的方法数或者为 0，或者不变
         if (s[i] == '0') cur = 0;
-        if (s[i - 1] == '1' || s[i - 1] == '2' && s[i] <= '6') cur += pre;
-
-        pre = tmp;
+        //判断 s[i-1] 与 s[i] 能否共同解码
+        if (s[i - 1] == '1' || s[i - 1] == '2' && s[i] <= '6')
+            cur += pre;  //以 s[i] 结尾的子串，s[i-1] 与 s[i] 共同解码的方法数 =
+                         // s[i] 单独解码的方法数 + 以 s[i - 2]
+                         //结尾的子串的解码方法数
+        pre = tmp;  //以 s[i - 1] 结尾的子串的解码方法数
     }
     return cur;
 }
@@ -247,9 +251,13 @@ bool wordBreak(string s, vector<string>& wordDict) {
     for (int i = 1; i <= n; ++i) {
         for (const auto& word : wordDict) {
             int len = word.length();
-            if (i >= len && word == s.substr(i - len, len))
-                dp[i] = dp[i] || dp[i - len];
-            if (dp[i]) break;
+            /* if (i >= len && word == s.substr(i - len, len))
+                dp[i] = dp[i] || dp[i - len]; */
+
+            if (i >= len && word == s.substr(i - len, len)) {
+                dp[i] = dp[i - len];
+                if (dp[i]) break;
+            }
         }
     }
     return dp[n];
@@ -276,4 +284,47 @@ int coinChange(vector<int>& coins, int amount) {
         }
     }
     return dp[amount] == INT_MAX - 1 ? -1 : dp[amount];
+}
+
+// 300.最长递增子序列
+//动态规划
+int lengthOfLIS(vector<int>& nums) {
+    int n = nums.size();
+    if (n <= 1) return n;
+    vector<int> dp(n, 1);
+    int max_size = 1;
+    for (int i = 1; i < n; ++i) {
+        for (int j = 0; j < i; ++j) {
+            if (nums[j] < nums[i]) dp[i] = max(dp[i], dp[j] + 1);
+        }
+        max_size = max(max_size, dp[i]);
+    }
+    return max_size;
+}
+//贪心 + 二分查找
+int lengthOfLIS(vector<int>& nums) {
+    int n = nums.size();
+    if (n <= 1) return n;
+    vector<int> dp;
+    dp.push_back(nums[0]);
+    for (int i = 1; i < n; ++i) {
+        if (dp.back() < nums[i]) {
+            //若 dp 数组最大值小于 nums[i]，增加子序列长度
+            dp.push_back(nums[i]);
+        } else {
+            //这里用到“贪心”思想
+            //找第一个 >= nums[i] 的元素，用 nums[i] 替换这个元素
+            //以保证 dp[k-1] 是 min{ 长度为 k 的子序列的最后一个元素 }
+            int l = 0, r = dp.size();
+            while (l < r) {
+                int mid = (l + r) >> 1;  //本题不会溢出
+                if (dp[mid] < nums[i])
+                    l = mid + 1;
+                else
+                    r = mid;
+            }
+            dp[l] = nums[i];
+        }
+    }
+    return dp.size();
 }

@@ -73,8 +73,8 @@ bool isPalindrome(ListNode *head) {
     ListNode *slow = head, *fast = head;
     while (fast->next &&
            fast->next->next) {  //循环结束时 slow 在中点（奇）或中点左侧（偶）
-        slow = slow->next;
         fast = fast->next->next;
+        slow = slow->next;
     }
     slow->next = reverseList(slow->next);  // 翻转后半段链表，call 206.
     ListNode *mid = slow;  //保存分界点，便于后面恢复数据
@@ -92,6 +92,7 @@ bool isPalindrome(ListNode *head) {
 }
 
 // 83.删除排序链表中的重复元素
+/* 给定一个排序链表，删除所有重复的元素，使得每个元素只出现一次。 */
 ListNode *deleteDuplicates(ListNode *head) {
     if (head == nullptr) return nullptr;
     ListNode *cur = head;
@@ -104,6 +105,26 @@ ListNode *deleteDuplicates(ListNode *head) {
             cur = cur->next;
     }
     return head;
+}
+
+// 82.删除排序链表中的重复元素II
+/* 给定一个排序链表，删除所有含有重复数字的节点，只保留原始链表中 没有重复出现
+ * 的数字。 */
+ListNode *deleteDuplicates(ListNode *head) {
+    ListNode *dummy = new ListNode(0, head), *pre = dummy, *cur = head;
+    while (cur && cur->next) {  //须要同时判断 cur 和 cur->next
+        if (cur->next->val == cur->val) {
+            int val = cur->val;  //暂存重复元素
+            cur = cur->next->next;
+            while (cur && cur->val == val)  //找第一个非空且不重复的元素
+                cur = cur->next;
+            pre->next = cur;
+        } else {
+            pre = cur;
+            cur = cur->next;
+        }
+    }
+    return dummy->next;
 }
 
 // 328.奇偶链表
@@ -133,7 +154,7 @@ ListNode *oddEvenList(ListNode *head) {
 ListNode *sortList(ListNode *head) {
     if (head == nullptr || head->next == nullptr) return head;
     //分
-    ListNode *mid = findMid(head);
+    ListNode *mid = middleNode1(head);
     ListNode *pb = mid->next;
     mid->next = nullptr;  // attention!
     ListNode *pa = sortList(head);
@@ -142,15 +163,80 @@ ListNode *sortList(ListNode *head) {
     return mergeTwoLists(pa, pb);  // call 21.
 }
 
-ListNode *findMid(ListNode *head) {  // 234.用到此方法
+/* 给定一个头结点为 head 的非空单链表，返回链表的中间结点。
+如果有两个中间结点，则返回第一个中间结点。 */
+ListNode *middleNode1(ListNode *head) {  // 234.用到此方法
     ListNode *slow = head, *fast = head;
     while (fast->next &&
            fast->next->next) {  //循环结束时 slow 在中点（奇）或中点左侧（偶）
-        slow = slow->next;
         fast = fast->next->next;
+        slow = slow->next;
+    }
+    return slow;
+}
+
+// 876.链表的中间节点
+/* 给定一个头结点为 head 的非空单链表，返回链表的中间结点。
+如果有两个中间结点，则返回第二个中间结点。 */
+ListNode *middleNode2(ListNode *head) {
+    ListNode *slow = head, *fast = head;
+    while (fast && fast->next) {
+        fast = fast->next->next;
+        slow = slow->next;
     }
     return slow;
 }
 
 // 147.对链表进行插入排序
-ListNode *insertionSortList(ListNode *head) {}
+ListNode *insertionSortList(ListNode *head) {
+    if (head == nullptr || head->next == nullptr) return head;
+    ListNode *dummy = new ListNode(0, head), *pre = head, *cur = head->next;
+    while (cur != nullptr) {
+        ListNode *insert_pos = dummy;
+        while (insert_pos->next->val < cur->val) {
+            insert_pos = insert_pos->next;
+        }
+        if (insert_pos != pre) {
+            ListNode *insert_pos_next = insert_pos->next;
+            insert_pos->next = cur;
+            pre->next = cur->next;
+            cur->next = insert_pos_next;
+            cur = pre->next;
+        } else {
+            pre = cur;
+            cur = cur->next;
+        }
+    }
+    return dummy->next;
+}
+
+ListNode *findInsertPosition(ListNode *dummy, int val) {
+    //对数组进行插入排序时，从当前索引开始向前找插入位置
+    //考虑到单链表只能从头遍历的特点，函数从哨兵节点出发找插入位置
+    ListNode *pre = dummy;
+    while (pre->next->val < val) {  // val是链表中的值，一定能找到插入位置
+        pre = pre->next;
+    }
+    return pre;
+}
+
+//剑指Offer18.删除链表的节点
+/* 给定单向链表的头指针和一个要删除的节点的值，定义一个函数删除该节点。
+返回删除后的链表的头节点。
+题目保证链表中节点的值互不相同
+不需要 free 或 delete 被删除的节点 */
+ListNode *deleteNode(ListNode *head, int val) {
+    ListNode *dummy = new ListNode(0, head), *cur = dummy;
+    while (cur->next->val != val) {
+        cur = cur->next;
+    }
+    cur->next = cur->next->next;
+    return dummy->next;
+}
+
+// 237.删除链表中的节点
+/* 删除单向链表中间的某个节点（即不是第一个或最后一个节点），假定你只能访问该节点*/
+void deleteNode(ListNode *node) {
+    node->val = node->next->val;
+    node->next = node->next->next;
+}
