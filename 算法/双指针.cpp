@@ -133,3 +133,31 @@ bool judgeSquareSum(int c) {
     }
     return false;
 }
+
+// 524.通过删除字母匹配到字典里最长单词
+string findLongestWord(string s, vector<string> &d) {
+    string result = "";
+    int s_len = s.length(), n = d.size(), result_len = 0;
+    for (const auto &word : d) {
+        int word_len = word.length();
+        // 两种情况下，有可能更新 result
+        // 1. result_len < 当前单词的长度 < s_len
+        // 2. result_len = 当前单词的长度 且 当前单词的字典序更小
+        if ((result_len < word_len && word_len <= s_len) ||
+            (word_len == result_len && word < result)) {
+            //判断能否通过删除字母得到当前单词
+            // p1 遍历 s，p2 遍历当前单词
+            int p1 = 0, p2 = 0;
+            while (p1 < s_len && p2 < word_len) {
+                if (s[p1] == word[p2]) p2++;
+                p1++;
+            }
+            // p2 走到结尾，说明可以通过删除字母得到当前单词，更新相关值
+            if (p2 == word_len) {
+                result_len = word_len;
+                result = word;
+            }
+        }
+    }
+    return result;
+}

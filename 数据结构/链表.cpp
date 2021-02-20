@@ -192,17 +192,21 @@ ListNode *insertionSortList(ListNode *head) {
     if (head == nullptr || head->next == nullptr) return head;
     ListNode *dummy = new ListNode(0, head), *pre = head, *cur = head->next;
     while (cur != nullptr) {
+        //对数组进行插入排序时，从当前索引开始向前找插入位置
+        //考虑到单链表只能从头遍历的特点，从哨兵节点出发找插入位置
         ListNode *insert_pos = dummy;
         while (insert_pos->next->val < cur->val) {
             insert_pos = insert_pos->next;
         }
-        if (insert_pos != pre) {
+
+        if (insert_pos != pre) {  //插入位置不是原位置，需进行插入操作
+            //暂存插入位置的后一个结点
             ListNode *insert_pos_next = insert_pos->next;
             insert_pos->next = cur;
             pre->next = cur->next;
             cur->next = insert_pos_next;
             cur = pre->next;
-        } else {
+        } else {  //插入位置是原位置，无需进行插入操作
             pre = cur;
             cur = cur->next;
         }
@@ -210,14 +214,44 @@ ListNode *insertionSortList(ListNode *head) {
     return dummy->next;
 }
 
-ListNode *findInsertPosition(ListNode *dummy, int val) {
-    //对数组进行插入排序时，从当前索引开始向前找插入位置
-    //考虑到单链表只能从头遍历的特点，函数从哨兵节点出发找插入位置
-    ListNode *pre = dummy;
-    while (pre->next->val < val) {  // val是链表中的值，一定能找到插入位置
-        pre = pre->next;
+// by LWK
+ListNode *insertionSortList(ListNode *head) {
+    //特殊情况，有一个一定是有序的
+    if (head == nullptr || head->next == nullptr) return head;
+
+    ListNode *tmp1 = head->next;  //迭代所有节点
+    ListNode *tmp2 = nullptr;     //保留tmp1后一个节点
+    ListNode *tmp3 = head;        //保留tmp1前一个节点
+
+    while (tmp1 != nullptr) {
+        //寻找tmp1该插入的位置
+        ListNode *head1 = head;
+        ListNode *pre = nullptr;
+        while ((head1->val < tmp1->val) && head1 != tmp1) {
+            pre = head1;
+            head1 = head1->next;
+        }
+
+        //分三种情况
+        if (pre == nullptr)  //如果比第一个还小,即它应该成为开始结点
+        {
+            tmp2 = tmp1->next;
+            tmp1->next = head;
+            tmp3->next = tmp2;
+            head = tmp1;
+        } else if (tmp1 == head1)  //此时大于前边所有数，在原位置保持不变
+        {
+            tmp2 = tmp1->next;
+            tmp3 = tmp1;
+        } else {  //在中间正常插入
+            tmp2 = tmp1->next;
+            tmp1->next = head1;
+            pre->next = tmp1;
+            tmp3->next = tmp2;
+        }
+        tmp1 = tmp2;
     }
-    return pre;
+    return head;
 }
 
 //剑指Offer18.删除链表的节点

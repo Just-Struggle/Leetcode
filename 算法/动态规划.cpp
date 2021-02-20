@@ -2,6 +2,7 @@
 using namespace std;
 
 #include <algorithm>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -113,10 +114,8 @@ int rob1(vector<int>& nums) {
 int rob(vector<int>& nums) {
     if (nums.size() == 0) return 0;
     if (nums.size() == 1) return nums[0];
-    vector<int> a = vector<int>(
-        nums.begin(),
-        nums.end() -
-            1);  //{1}如果只有一个元素，加上vector不包含end()所以截取之后没有元素
+    //{1}如果只有一个元素，加上vector不包含end()所以截取之后没有元素
+    vector<int> a = vector<int>(nums.begin(), nums.end() - 1);
     vector<int> b = vector<int>(nums.begin() + 1, nums.end());
     return max(rob1(a), rob1(b));
 }
@@ -301,7 +300,8 @@ int lengthOfLIS(vector<int>& nums) {
     }
     return max_size;
 }
-//贪心 + 二分查找
+
+//动规 + 二分
 int lengthOfLIS(vector<int>& nums) {
     int n = nums.size();
     if (n <= 1) return n;
@@ -312,12 +312,11 @@ int lengthOfLIS(vector<int>& nums) {
             //若 dp 数组最大值小于 nums[i]，增加子序列长度
             dp.push_back(nums[i]);
         } else {
-            //这里用到“贪心”思想
             //找第一个 >= nums[i] 的元素，用 nums[i] 替换这个元素
             //以保证 dp[k-1] 是 min{ 长度为 k 的子序列的最后一个元素 }
             int l = 0, r = dp.size();
             while (l < r) {
-                int mid = (l + r) >> 1;  //本题不会溢出
+                int mid = l + ((r - l) >> 1);
                 if (dp[mid] < nums[i])
                     l = mid + 1;
                 else
@@ -327,4 +326,190 @@ int lengthOfLIS(vector<int>& nums) {
         }
     }
     return dp.size();
+}
+
+// 646.最长数对链
+//可以类比为给定任务的起始时间和终止时间，如何尽可能多地完成任务
+// 动规 + 二分
+int findLongestChain(vector<vector<int>>& pairs) {  // 1<=n<=1000
+    //注意要先对 pairs 排序，
+    //这里采用第一个元素从小到大的排序方式，第一个元素相同时按照第二个元素从小到大排序
+    sort(pairs.begin(), pairs.end(), [](const auto& a, const auto& b) {
+        return a[0] < b[0] || a[0] == b[0] && a[1] < b[1];
+    });
+    vector<int> dp;  //只保存数对第二个元素
+    dp.push_back(pairs[0][1]);
+    for (int i = 1; i < pairs.size(); ++i) {
+        int first = pairs[i][0], second = pairs[i][1];
+        if (dp.back() < first)  //加入数对
+            dp.push_back(second);
+        else if (dp.back() > second) {
+            // second < 当前数对链末尾元素，有可能替换原有数对
+            int l = 0, r = dp.size();
+            while (l < r) {
+                int mid = l + ((r - l) >> 1);
+                if (dp[mid] < first)
+                    l = mid + 1;
+                else
+                    r = mid;
+            }
+            // l 左侧的值均小于 first，dp[l-1] < first <= dp[l]
+            if (dp[l] > second) dp[l] = second;  //替换原有数对
+        }
+    }
+    return dp.size();
+}
+
+//贪心
+//按结束时间从早到晚排序，每次选最早结束的任务加入队列
+int findLongestChain(vector<vector<int>>& pairs) {  // 1<=n<=1000
+    //先对 pairs 排序，
+    //这里采用第二个元素从小到大的排序方式，第二个元素相同时按照第一个元素从小到大排序
+    sort(pairs.begin(), pairs.end(), [](const auto& a, const auto& b) {
+        return a[1] < b[1] || a[1] == b[1] && a[0] < b[0];
+    });
+    int cnt = 0, end = pairs[0][1];
+    for (int i = 1; i < pairs.size(); ++i) {
+        if (end < pairs[i][0]) {
+            end = pairs[i][1];
+            ++cnt;
+        }
+    }
+    return cnt;
+}
+
+// 1143.最长公共子序列
+int longestCommonSubsequence(string text1, string text2) {
+    int m = text1.length(), n = text2.length();
+    vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
+    for (int i = 1; i <= m; ++i) {
+        for (int j = 1; j <= n; ++j) {
+            if (text1[i - 1] == text2[j - 1])
+                dp[i][j] = dp[i - 1][j - 1] + 1;  // attention
+            else
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
+        }
+    }
+    return dp[m][n];
+}
+
+//与“最大正方形”相似
+int longestCommonSubsequence(string text1, string text2) {
+    int m = text1.length(), n = text2.length();
+    vector<int> dp(n + 1, 0);
+    for (int i = 1; i <= m; ++i) {
+        int pre = 0;  //保存dp[i-1][j-1]
+        for (int j = 1; j <= n; ++j) {
+            int tmp = dp[j];  //保存dp[i-1][j]
+            if (text1[i - 1] == text2[j - 1])
+                dp[j] = pre + 1;
+            else
+                dp[j] = max(dp[j], dp[j - 1]);
+            pre = tmp;  //下一个循环 pre 变成 dp[i-1][j-1]
+        }
+    }
+    return dp[n];
+}
+
+// 583.两个字符串的删除操作
+int minDistance(string word1, string word2) {
+    int m = word1.length(), n = word2.length(),
+        sub_len = longestCommonSubsequence(word1, word2);
+    return m + n - 2 * sub_len;
+}
+
+// 376.摆动序列
+//类似于最长递增子序列的 动规 + 二分 做法
+// cnt 保存摆动序列的最大长度，last 保存摆动序列的最后一个元素
+int wiggleMaxLength(vector<int>& nums) {
+    int n = nums.size();
+    if (n < 2) return n;
+    int cnt = 1, diff_sig = 0, last = nums[0];
+    //找到第一对不相等的数，特例：[0,0,0,0]
+    for (int i = 1; i < n; ++i)
+        if (nums[i] != last) {
+            diff_sig = (nums[i] - last) > 0 ? 1 : -1;
+            last = nums[i];
+            ++cnt;
+            break;
+        }
+    //若所有元素均相等，返回 1
+    if (diff_sig == 0) return 1;
+    for (int i = 2; i < n; ++i) {
+        // 1.若数组中相邻的两个元素的差与摆动序列上一个差值的符号相反，满足条件，更新相关值
+        // 2.若相邻的两个元素的差与摆动序列上一个差值的符号相同
+        // 2.1.若摆动序列上一个差值 > 0，令序列最后一个元素尽可能大
+        // 2.2.若摆动序列上一个差值 < 0，令序列最后一个元素尽可能小
+        if (nums[i] - nums[i - 1] > 0 && diff_sig < 0 ||
+            nums[i] - nums[i - 1] < 0 && diff_sig > 0) {
+            diff_sig = -diff_sig;
+            last = nums[i];
+            ++cnt;
+        } else if (diff_sig > 0 && nums[i] > last ||
+                   diff_sig < 0 && nums[i] < last)
+            last = nums[i];
+    }
+    return cnt;
+}
+
+// 416.分割等和子集
+//相当于 0-1 背包问题，N = nums.size()，W = sum / 2;
+bool canPartition(vector<int>& nums) {
+    int n = nums.size();
+    if (n < 2) return false;
+    int sum = accumulate(nums.begin(), nums.end(), 0);
+    if (sum % 2) return false;  //数组总和为奇数时，不可能分割出等和子集
+
+    int W = sum / 2;
+    vector<bool> dp(W + 1, false);
+    dp[0] = true;
+    for (int i = 1; i <= n; ++i) {
+        int w = nums[i - 1];
+        for (int j = W; j >= w; --j) {
+            //注意这里是逆向，因为需要用到外层上一循环的两个结果
+            // dp[i][j] = dp[i - 1][j] || dp[i - 1][j - w];
+            dp[j] = dp[j] || dp[j - w];
+        }
+    }
+    return dp[W];
+}
+
+// 474.一和零
+int findMaxForm(vector<string>& strs, int m, int n) {
+    vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
+    for (const auto& str : strs) {
+        int cnt0 = 0, cnt1 = 0;
+        for (int i = 0; i < str.length(); ++i) {
+            if (str[i] == '0')
+                ++cnt0;
+            else
+                ++cnt1;
+        }
+        for (int i = m; i >= cnt0; --i) {
+            for (int j = n; j >= cnt1; --j) {
+                dp[i][j] = max(dp[i][j], 1 + dp[i - cnt0][j - cnt1]);
+            }
+        }
+    }
+    return dp[m][n];
+}
+
+// 494.目标和
+//总和 = sum，令加法部分总和 = x，则减法部分总和 = sum - x
+// S = x - (sum - x) 即 2 * x = (S + sum)，x 必为偶数
+//相当于 0-1 背包问题，目标 W = x
+int findTargetSumWays(vector<int>& nums, int S) {
+    int sum = accumulate(nums.begin(), nums.end(), 0);
+    if (abs(S) > sum || (S + sum) % 2 == 1) return 0;
+
+    int W = (S + sum) / 2;
+    vector<int> dp(W + 1, 0);
+    dp[0] = 1;
+    for (int i = 0; i < nums.size(); ++i) {
+        int w = nums[i];
+        for (int j = W; j >= w; --j) {
+            dp[j] = dp[j] + dp[j - w];
+        }
+    }
+    return dp[W];
 }
