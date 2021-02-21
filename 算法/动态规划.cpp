@@ -424,30 +424,61 @@ int minDistance(string word1, string word2) {
 int wiggleMaxLength(vector<int>& nums) {
     int n = nums.size();
     if (n < 2) return n;
-    int cnt = 1, diff_sig = 0, last = nums[0];
+    int cnt = 1, last_diff = 0, last = nums[0];
     //找到第一对不相等的数，特例：[0,0,0,0]
-    for (int i = 1; i < n; ++i)
-        if (nums[i] != last) {
-            diff_sig = (nums[i] - last) > 0 ? 1 : -1;
+    int i;
+    for (i = 1; i < n; ++i) {
+        last_diff = nums[i] - last;
+        if (last_diff) {
             last = nums[i];
             ++cnt;
             break;
         }
+    }
     //若所有元素均相等，返回 1
-    if (diff_sig == 0) return 1;
-    for (int i = 2; i < n; ++i) {
+    if (last_diff == 0) return 1;
+
+    for (; i < n; ++i) {
+        int cur_diff = nums[i] - nums[i - 1];
         // 1.若数组中相邻的两个元素的差与摆动序列上一个差值的符号相反，满足条件，更新相关值
         // 2.若相邻的两个元素的差与摆动序列上一个差值的符号相同
         // 2.1.若摆动序列上一个差值 > 0，令序列最后一个元素尽可能大
         // 2.2.若摆动序列上一个差值 < 0，令序列最后一个元素尽可能小
-        if (nums[i] - nums[i - 1] > 0 && diff_sig < 0 ||
-            nums[i] - nums[i - 1] < 0 && diff_sig > 0) {
-            diff_sig = -diff_sig;
+        if (cur_diff > 0 && last_diff < 0 || cur_diff < 0 && last_diff > 0) {
+            last_diff = cur_diff;
             last = nums[i];
             ++cnt;
-        } else if (diff_sig > 0 && nums[i] > last ||
-                   diff_sig < 0 && nums[i] < last)
+        } else if (last_diff > 0 && nums[i] > last ||
+                   last_diff < 0 && nums[i] < last)
             last = nums[i];
+    }
+    return cnt;
+}
+//上一种方法麻烦了
+int wiggleMaxLength(vector<int>& nums) {
+    int n = nums.size();
+    if (n < 2) return n;
+    int cnt = 1, last_diff = 0;
+    //找到第一对不相等的数，特例：[0,0,0,0]
+    int i;
+    for (i = 1; i < n; ++i) {
+        last_diff = nums[i] - nums[0];
+        if (last_diff) {
+            nums[0] = nums[i];
+            ++cnt;
+            break;
+        }
+    }
+    //若所有元素均相等，返回 1
+    if (last_diff == 0) return 1;
+
+    for (; i < n; ++i) {
+        int cur_diff = nums[i] - nums[i - 1];
+        if (cur_diff > 0 && last_diff < 0 || cur_diff < 0 && last_diff > 0) {
+            //加入摆动序列
+            last_diff = cur_diff;
+            ++cnt;
+        }
     }
     return cnt;
 }
@@ -512,4 +543,100 @@ int findTargetSumWays(vector<int>& nums, int S) {
         }
     }
     return dp[W];
+}
+
+// 72.编辑距离
+int minDistance(string word1, string word2) {
+    int m = word1.length(), n = word2.length();
+    if (m == 0 || n == 0) return max(m, n);
+    vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
+    for (int i = 0; i <= m; ++i)
+        dp[i][0] = i;  //一个字符串为空时，通过插入得到另一个字符串
+    for (int i = 1; i <= n; ++i)
+        dp[0][i] = i;  //一个字符串为空时，通过插入得到另一个字符串
+
+    for (int i = 1; i <= m; ++i) {
+        for (int j = 1; j <= n; ++j) {
+            dp[i][j] =
+                min(dp[i - 1][j - 1] + (word1[i - 1] == word2[j - 1] ? 0 : 1),
+                    min(dp[i - 1][j] + 1, dp[i][j - 1] + 1));
+        }
+    }
+    return dp[m][n];
+}
+
+// 650.只有两个键的键盘
+/* 初始时有一个 A，可以进行 复制全部、粘贴上次复制结果 两种操作 */
+int minSteps(int n) {
+    if (n == 1) return 0;
+    vector<int> dp(n + 1, n);
+    dp[2] = 2;
+    for (int i = 3; i <= n; ++i) {
+        // 1. i 是素数，此时进行 1 次复制，i-1 次粘贴，共 i 次
+        // 2. i 是合数，找 i 的最大因数和最小因数，
+        //在已输入 max_factor 个 A 的情况下，把这些 A 看作一个整体，还需要
+        // dp[min_factor] 次操作
+        int max_factor = 1, min_factor = 2;
+        while (min_factor <= sqrt(n)) {
+            if (i % min_factor == 0) {
+                max_factor = i / min_factor;
+                break;
+            }
+            ++min_factor;
+        }
+        dp[i] = (max_factor == 1) ? i : dp[max_factor] + dp[min_factor];
+    }
+    return dp[n];
+}
+
+// 10.正则表达式匹配
+bool isMatch(string s, string p) {
+    int m = s.length(), n = p.length();
+    vector<vector<int>> dp(m + 1, vector<int>(n + 1, false));
+    dp[0][0] = true;
+    for (int i = 0; i < n; ++i) {
+        if (p[i] == '*') {
+            dp[0][i] = dp[0][i - 2];
+        }
+    }
+    for (int i = 1; i < m + 1; ++i) {
+        for (int j = 1; j < n + 1; ++j) {
+            if (p[j - 1] == '.')  //任意字符均匹配
+                dp[i][j] = dp[i - 1][j - 1];
+            else if (p[j - 1] != '*')  //是字母
+                dp[i][j] = dp[i - 1][j - 1] && p[j - 1] == s[i - 1];
+            else {  //是 '*'
+                if (p[j - 2] != '.' &&
+                    p[j - 2] != s[i - 1])  //与 * 前的字符不匹配
+                    dp[i][j] = dp[i][j - 2];
+                else  //与 * 前的字符匹配
+                    dp[i][j] = dp[i - 1][j] || dp[i][j - 1] || dp[i][j - 2];
+            }
+        }
+    }
+    return dp[m][n];
+}
+bool isMatch(string s, string p) {
+    int m = s.size(), n = p.size();
+    vector<vector<bool>> dp(m + 1, vector<bool>(n + 1, false));
+    dp[0][0] = true;
+    for (int i = 1; i < n + 1; ++i) {
+        if (p[i - 1] == ’*’) {
+            dp[0][i] = dp[0][i - 2];
+        }
+    }
+    for (int i = 1; i < m + 1; ++i) {
+        for (int j = 1; j < n + 1; ++j) {
+            if (p[j - 1] == ’.’) {
+                dp[i][j] = dp[i - 1][j - 1];
+            } else if (p[j - 1] != ’*’) {
+                dp[i][j] = dp[i - 1][j - 1] && p[j - 1] == s[i - 1];
+            } else if (p[j - 2] != s[i - 1] && p[j - 2] != ’.’) {
+                dp[i][j] = dp[i][j - 2];
+            } else {
+                dp[i][j] = dp[i][j - 1] || dp[i - 1][j] || dp[i][j - 2];
+            }
+        }
+    }
+    return dp[m][n];
 }

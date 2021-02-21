@@ -121,9 +121,10 @@ bool hasCycle(ListNode *head) {
     return true;
 }
 
+// 633.平方数之和
 bool judgeSquareSum(int c) {
     long long i = 0, j = sqrt(c);
-    while (i != j + 1) {
+    while (i <= j) {
         if (i * i + j * j == c)
             return true;
         else if (i * i + j * j < c)

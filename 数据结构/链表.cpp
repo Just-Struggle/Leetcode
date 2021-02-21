@@ -274,3 +274,19 @@ void deleteNode(ListNode *node) {
     node->val = node->next->val;
     node->next = node->next->next;
 }
+
+//面试题02.05.链表求和
+ListNode *addTwoNumbers(ListNode *l1, ListNode *l2) {
+    ListNode *dummy = new ListNode(), *cur = dummy;
+    int carry = 0;
+    while (l1 != nullptr || l2 != nullptr || carry > 0) {
+        int num1 = l1 ? l1->val : 0, num2 = l2 ? l2->val : 0,
+            sum = num1 + num2 + carry;
+        carry = sum / 10;
+        cur->next = new ListNode(sum % 10);
+        cur = cur->next;
+        if (l1) l1 = l1->next;
+        if (l2) l2 = l2->next;
+    }
+    return dummy->next;
+}
