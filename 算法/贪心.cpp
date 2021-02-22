@@ -85,9 +85,9 @@ bool canPlaceFlowers(vector<int>& flowerbed, int n) {
     for (int i = 0; i < size; i += 2) {
         if (flowerbed[i] == 0) {
             if (i == size - 1 || flowerbed[i + 1] == 0)
-                n--;  //能种花
+                --n;  //能种花
             else
-                i++;  // 从 flowerbed[i + 1] = 1 开始走两步
+                ++i;  // 从 flowerbed[i + 1] = 1 开始走两步
         }
     }
     return n <= 0;
@@ -131,16 +131,17 @@ vector<int> partitionLabels(string S) {  // 1<=n<=500
 }
 
 // 121.买卖股票的最佳时机
+//类似于求最大连续子序列和
 int maxProfit(vector<int>& prices) {
     int n = prices.size();
     if (n < 2) return 0;
-    int buy = prices[0], sell = buy, profit = 0;
+    int buy = prices[0], sell = prices[0], profit = 0;
     for (int i = 1; i < n; ++i) {
         if (prices[i] < buy) {
             buy = prices[i];
-            sell = buy;
+            sell = buy;  //买入价格变小，令卖出价格等于买入价格
         } else if (prices[i] > sell) {
-            sell = prices[i];
+            sell = prices[i];  //找到更高的卖出价格，更新最大利润
             profit = max(profit, sell - buy);
         }
     }
@@ -148,7 +149,8 @@ int maxProfit(vector<int>& prices) {
 }
 
 // 122.买卖股票的最佳时机II
-//可以当天卖后再买，这样只要第二天价格比第一天高，就在第一天买入，第二天卖出
+//类似于求最大非连续子序列和
+//可以卖后再买，这样只要第二天价格比第一天高，就在第一天买入，第二天卖出
 //利润 = 所有正的价格差求和
 int maxProfit(vector<int>& prices) {
     int n = prices.size();
@@ -178,6 +180,23 @@ vector<vector<int>> reconstructQueue(vector<vector<int>>& people) {
     return queue;
 }
 
+vector<vector<int>> reconstructQueue(vector<vector<int>>& people) {
+    sort(people.begin(), people.end(), [](const auto& p1, const auto& p2) {
+        if (p1[0] != p2[0]) return p1[0] > p2[0];
+        return p1[1] < p2[1];
+    });
+    list<vector<int>> que;  // list底层是链表实现，插入效率比vector高的多
+    for (int i = 0; i < people.size(); i++) {
+        int position = people[i][1];  // 插入到下标为position的位置
+        std::list<vector<int>>::iterator it = que.begin();
+        while (position--) {  // 寻找在插入位置
+            it++;
+        }
+        que.insert(it, people[i]);
+    }
+    return vector<vector<int>>(que.begin(), que.end());
+}
+
 // 665.非递减数列
 bool checkPossibility(vector<int>& nums) {
     int n = nums.size();
@@ -202,4 +221,185 @@ bool checkPossibility(vector<int>& nums) {
         }
     }
     return true;
+}
+
+// 1005.K次取反后最大化的数组和
+int largestSumAfterKNegations(vector<int>& A, int K) {
+    int n = A.size();
+    sort(A.begin(), A.end());  //数组按从小到大排列
+    int i = 0;
+    //有负数，先翻转负数
+    while (K > 0 && A[i] < 0) {
+        --K;
+        A[i] = -A[i];
+        if (++i == n) break;  //访问到数组结尾
+    }
+    int sum = accumulate(A.begin(), A.end(), 0);
+    if (K == 0) return sum;
+    //访问到数组结尾
+    if (i == n) {
+        if (K % 2 == 1)  //翻转当前最小数（原最大负数 or 最小正数）
+            return sum - 2 * A[i - 1];
+        else  //直接返回 sum
+            return sum;
+    }
+    //数组有 0，只翻转 0，直接返回 sum
+    if (A[i] == 0 && K >= 0) return sum;
+    //数组中还有元素，说明数组中没有 0，
+    //剩余元素均为正数
+    //若当前 K 为偶数，翻转 K 次同一个数，直接返回 sum
+    //若当前 K 为奇数，翻转一次当前最小正数，返回
+    if (K % 2 == 1) {
+        if (i == 0)  //数组只有正数，当前最小正数是 A[i]
+            return sum - 2 * A[i];
+        else  //当前最小正数是 A[i] 或 A[i-1]（原最大负数）
+            return sum - 2 * min(A[i], A[i - 1]);
+    } else
+        return sum;
+}
+//按数组元素绝对值从大到小排序，遇到负数就翻转
+//如果到最后一个元素还可以翻转，只需要翻转最后一个元素
+int largestSumAfterKNegations(vector<int>& A, int K) {
+    int n = A.size();
+    sort(A.begin(), A.end(), [](const auto& a, const auto& b) {
+        return abs(a) > abs(b);  //这里取等会溢出
+    });
+    for (int i = 0; i < n; ++i) {
+        if (A[i] < 0) {
+            A[i] = -A[i];
+            --K;
+            if (K == 0) break;
+        }
+    }
+    int sum = accumulate(A.begin(), A.end(), 0);
+    if (K % 2 == 1) return sum - 2 * A[n - 1];  // K 为奇数
+    return sum;                                 // K 为 0 或 其他偶数
+}
+
+// 55.跳跃游戏
+bool canJump(vector<int>& nums) {
+    int n = nums.size();
+    if (n == 1) return true;
+    int can_reach = 0;  //保存能到达的最远位置
+    for (int i = 0; i < n - 1; ++i) {
+        can_reach = max(can_reach, i + nums[i]);
+        if (can_reach >= n - 1)  //能到达最后一个下标
+            return true;
+        if (i == can_reach)  //当前位置就是能到达的最远位置，无法向前走
+            return false;
+    }
+    return false;
+}
+bool canJump(vector<int>& nums) {
+    int n = nums.size();
+    if (n == 1) return true;
+    int can_reach = 0;  //保存能到达的最远位置
+    for (int i = 0; i <= can_reach; ++i) {
+        can_reach = max(can_reach, i + nums[i]);
+        if (can_reach >= n - 1)  //能到达最后一个下标
+            return true;
+    }
+    return false;  //已到达最远位置，无法向前走
+}
+
+// 45.跳跃游戏II
+//相当于求“最小覆盖区间”
+//每次在当前区间的覆盖范围内找到下一区间的最大终点
+int jump(vector<int>& nums) {
+    int n = nums.size();
+    if (n == 1) return 0;
+    int can_reach = 0;  //保存当前能到达的最远位置
+    int next_end = 0;   //保存下一跳能到的最远位置
+    int cnt = 0;
+    for (int i = 0; i < n - 1; ++i) {
+        //在当前覆盖范围内寻找能到达的最远位置，作为下一区间的终点
+        next_end = max(next_end, i + nums[i]);
+        if (next_end >= n - 1)  //下一区间能覆盖最后一个位置，
+            return cnt + 1;     //返回 当前区间数+1
+        //进入下一区间
+        if (i == can_reach) {
+            can_reach = next_end;
+            ++cnt;
+        }
+    }
+    return cnt;
+}
+
+// 134.加油站
+int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+    // cur_left 记录从 start 开始，油箱剩余油量
+    // total_left 计算总剩余油量
+    int cur_left = 0, total_left = 0, start = 0;
+    for (int i = 0; i < gas.size(); ++i) {
+        cur_left += gas[i] - cost[i];
+        total_left += gas[i] - cost[i];
+        if (cur_left < 0) {  //油量不足，说明之前选的出发点不能跑一圈
+            start = i + 1;  //将下一位置作为出发点
+            cur_left = 0;
+        }
+    }
+    return (total_left < 0) ? -1 : start;
+}
+
+// 860.柠檬水找零
+bool lemonadeChange(vector<int>& bills) {
+    int n = bills.size();
+    if (n == 0) return true;
+    int cnt5 = 0, cnt10 = 0;
+    for (int i = 0; i < n; ++i) {
+        switch (bills[i]) {
+            case 5:
+                ++cnt5;
+                break;
+            case 10:
+                if (cnt5) {
+                    --cnt5;
+                    ++cnt10;
+                } else
+                    return false;
+                break;
+            case 20:
+                if (cnt10 && cnt5) {
+                    --cnt10;
+                    --cnt5;
+                } else if (cnt5 >= 3) {
+                    cnt5 -= 3;
+                } else
+                    return false;
+                break;
+        }
+    }
+    return true;
+}
+
+// 56.合并区间
+vector<vector<int>> merge(vector<vector<int>>& intervals) {
+    // todo
+    int n = intervals.size();
+    if (n < 2) return 0;  //区间数 < 2，不需要移除
+    //按终点从小到大排序
+    sort(intervals.begin(), intervals.end(),
+         [](const auto& a, const auto& b) { return a[1] < b[1]; });
+    vector<vector<int>> ans;
+    int start = intervals[0][0], end = intervals[0][1];
+    for (int i = 1; i < n; ++i) {
+        if (intervals[i][0] <= end) {
+            start = min(start, intervals[i][0]);
+            end = max(end, intervals[i][1]);
+        } else {
+            ans.push_back(vector<int>{start, end});
+            start = intervals[i][0];
+            end = intervals[i][1];
+        }
+    }
+    return ans;
+}
+
+// 738.单调递增的数字
+int monotoneIncreasingDigits(int N) {
+    int digits = 1, tmp = N;
+    while (tmp / 10) {
+        tmp /= 10;
+        ++digits;
+    }
 }

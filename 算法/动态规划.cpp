@@ -454,11 +454,13 @@ int wiggleMaxLength(vector<int>& nums) {
     }
     return cnt;
 }
-//上一种方法麻烦了
+//上一种方法麻烦了，
+//实际上 last 保存的一定是nums[i-1]，所以每次只需要判断 cur_diff 即可
 int wiggleMaxLength(vector<int>& nums) {
     int n = nums.size();
     if (n < 2) return n;
-    int cnt = 1, last_diff = 0;
+    int cnt = 1,
+        last_diff = 0;  // 这里只用到 last_diff 的符号，符号不变时不更新它的值
     //找到第一对不相等的数，特例：[0,0,0,0]
     int i;
     for (i = 1; i < n; ++i) {
@@ -471,8 +473,8 @@ int wiggleMaxLength(vector<int>& nums) {
     }
     //若所有元素均相等，返回 1
     if (last_diff == 0) return 1;
-
-    for (; i < n; ++i) {
+    //此时 i 已经访问过，循环起点应为 i + 1
+    for (++i; i < n; ++i) {
         int cur_diff = nums[i] - nums[i - 1];
         if (cur_diff > 0 && last_diff < 0 || cur_diff < 0 && last_diff > 0) {
             //加入摆动序列
@@ -551,15 +553,17 @@ int minDistance(string word1, string word2) {
     if (m == 0 || n == 0) return max(m, n);
     vector<vector<int>> dp(m + 1, vector<int>(n + 1, 0));
     for (int i = 0; i <= m; ++i)
-        dp[i][0] = i;  //一个字符串为空时，通过插入得到另一个字符串
+        dp[i][0] = i;  //一个字符串为空时，通过插入或删除得到另一个字符串
     for (int i = 1; i <= n; ++i)
-        dp[0][i] = i;  //一个字符串为空时，通过插入得到另一个字符串
+        dp[0][i] = i;  //一个字符串为空时，通过插入或删除得到另一个字符串
 
     for (int i = 1; i <= m; ++i) {
         for (int j = 1; j <= n; ++j) {
-            dp[i][j] =
-                min(dp[i - 1][j - 1] + (word1[i - 1] == word2[j - 1] ? 0 : 1),
-                    min(dp[i - 1][j] + 1, dp[i][j - 1] + 1));
+            if (word1[i - 1] == word2[j - 1])
+                dp[i][j] = dp[i - 1][j - 1];
+            else
+                dp[i][j] =
+                    min(dp[i - 1][j - 1], min(dp[i - 1][j], dp[i][j - 1])) + 1;
         }
     }
     return dp[m][n];
@@ -574,7 +578,7 @@ int minSteps(int n) {
     for (int i = 3; i <= n; ++i) {
         // 1. i 是素数，此时进行 1 次复制，i-1 次粘贴，共 i 次
         // 2. i 是合数，找 i 的最大因数和最小因数，
-        //在已输入 max_factor 个 A 的情况下，把这些 A 看作一个整体，还需要
+        // 在已输入 max_factor 个 A 的情况下，把这些 A 看作一个整体，还需要
         // dp[min_factor] 次操作
         int max_factor = 1, min_factor = 2;
         while (min_factor <= sqrt(n)) {
@@ -616,27 +620,19 @@ bool isMatch(string s, string p) {
     }
     return dp[m][n];
 }
-bool isMatch(string s, string p) {
-    int m = s.size(), n = p.size();
-    vector<vector<bool>> dp(m + 1, vector<bool>(n + 1, false));
-    dp[0][0] = true;
-    for (int i = 1; i < n + 1; ++i) {
-        if (p[i - 1] == ’*’) {
-            dp[0][i] = dp[0][i - 2];
-        }
-    }
-    for (int i = 1; i < m + 1; ++i) {
-        for (int j = 1; j < n + 1; ++j) {
-            if (p[j - 1] == ’.’) {
-                dp[i][j] = dp[i - 1][j - 1];
-            } else if (p[j - 1] != ’*’) {
-                dp[i][j] = dp[i - 1][j - 1] && p[j - 1] == s[i - 1];
-            } else if (p[j - 2] != s[i - 1] && p[j - 2] != ’.’) {
-                dp[i][j] = dp[i][j - 2];
-            } else {
-                dp[i][j] = dp[i][j - 1] || dp[i - 1][j] || dp[i][j - 2];
+
+// 188.买卖股票的最佳时机IV
+int maxProfit(int k, vector<int>& prices) {
+    int n = prices.size();
+    if (n < 1) return 0;
+    int profit = 0;
+    if (k >= n / 2) {
+        for (int i = 1; i < n; ++i)
+            if (prices[i] > prices[i - 1]) {
+                profit += prices[i] - prices[i - 1];
             }
-        }
+    } else {
+        // todo
     }
-    return dp[m][n];
+    return profit;
 }
