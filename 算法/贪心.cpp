@@ -180,23 +180,6 @@ vector<vector<int>> reconstructQueue(vector<vector<int>>& people) {
     return queue;
 }
 
-vector<vector<int>> reconstructQueue(vector<vector<int>>& people) {
-    sort(people.begin(), people.end(), [](const auto& p1, const auto& p2) {
-        if (p1[0] != p2[0]) return p1[0] > p2[0];
-        return p1[1] < p2[1];
-    });
-    list<vector<int>> que;  // list底层是链表实现，插入效率比vector高的多
-    for (int i = 0; i < people.size(); i++) {
-        int position = people[i][1];  // 插入到下标为position的位置
-        std::list<vector<int>>::iterator it = que.begin();
-        while (position--) {  // 寻找在插入位置
-            it++;
-        }
-        que.insert(it, people[i]);
-    }
-    return vector<vector<int>>(que.begin(), que.end());
-}
-
 // 665.非递减数列
 bool checkPossibility(vector<int>& nums) {
     int n = nums.size();
@@ -374,22 +357,19 @@ bool lemonadeChange(vector<int>& bills) {
 
 // 56.合并区间
 vector<vector<int>> merge(vector<vector<int>>& intervals) {
-    // todo
     int n = intervals.size();
-    if (n < 2) return 0;  //区间数 < 2，不需要移除
-    //按终点从小到大排序
+    if (n < 2)  //区间数 < 2，不需要移除
+        return vector<vector<int>>{
+            vector<int>{intervals[0][0], intervals[0][1]}};
+    //按起点从小到大排序
     sort(intervals.begin(), intervals.end(),
-         [](const auto& a, const auto& b) { return a[1] < b[1]; });
-    vector<vector<int>> ans;
-    int start = intervals[0][0], end = intervals[0][1];
+         [](const auto& a, const auto& b) { return a[0] < b[0]; });
+    vector<vector<int>> ans{vector<int>{intervals[0][0], intervals[0][1]}};
     for (int i = 1; i < n; ++i) {
-        if (intervals[i][0] <= end) {
-            start = min(start, intervals[i][0]);
-            end = max(end, intervals[i][1]);
-        } else {
-            ans.push_back(vector<int>{start, end});
-            start = intervals[i][0];
-            end = intervals[i][1];
+        if (ans.back()[1] < intervals[i][0]) {
+            ans.push_back(vector<int>{intervals[i][0], intervals[i][1]});
+        } else if (ans.back()[1] < intervals[i][1]) {
+            ans.back()[1] = intervals[i][1];
         }
     }
     return ans;
@@ -397,9 +377,14 @@ vector<vector<int>> merge(vector<vector<int>>& intervals) {
 
 // 738.单调递增的数字
 int monotoneIncreasingDigits(int N) {
-    int digits = 1, tmp = N;
-    while (tmp / 10) {
-        tmp /= 10;
-        ++digits;
+    string digits = to_string(N);
+    int n = digits.size(), flag = digits.size();
+    for (int i = n - 1; i > 0; --i) {
+        if (digits[i - 1] > digits[i]) {
+            flag = i;
+            --digits[i - 1];
+        }
     }
+    for (int i = flag; i < n; ++i) digits[i] = '9';
+    return stoi(digits);
 }
