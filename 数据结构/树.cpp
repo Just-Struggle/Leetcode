@@ -6,6 +6,7 @@ using namespace std;
 #include <queue>
 #include <stack>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -281,3 +282,85 @@ vector<double> averageOfLevels(TreeNode* root) {
     }
     return ans;
 }
+
+// 105.从前序与中序遍历序列构造二叉树
+TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+    if (preorder.empty()) return nullptr;
+    unordered_map<int, int> hash;
+    int n = preorder.size();
+    for (int i = 0; i < n; ++i) hash[inorder[i]] = i;
+    return helper(hash, preorder, 0, n - 1, 0);
+}
+// start 和 end 标记中序数组
+TreeNode* helper(unordered_map<int, int>& hash, vector<int>& preorder,
+                 int start, int end, int cur_preorder_index) {
+    if (start > end) return nullptr;
+    int cur_val = preorder[cur_preorder_index],
+        cur_inorder_index = hash[cur_val];
+    TreeNode* cur = new TreeNode(cur_val);
+    cur->left = helper(hash, preorder, start, cur_inorder_index - 1,
+                       cur_preorder_index + 1);
+    cur->right = helper(hash, preorder, cur_inorder_index + 1, end,
+                        cur_preorder_index + (cur_inorder_index - start + 1));
+    return cur;
+}
+
+// 669.修剪二叉搜索树
+TreeNode* trimBST(TreeNode* root, int low, int high) {
+    if (root == nullptr) return root;
+    if (root->val > high) return trimBST(root->left, low, high);
+    if (root->val < low) return trimBST(root->right, low, high);
+    root->left = trimBST(root->left, low, high);
+    root->right = trimBST(root->right, low, high);
+    return root;
+}
+
+// 208.实现Trie(前缀树）
+class TrieNode {
+   public:
+    TrieNode* childNode[26];
+    bool isVal;
+    TrieNode() : isVal(false) {
+        for (int i = 0; i < 26; ++i) childNode[i] = nullptr;
+    }
+};
+
+class Trie {
+    TrieNode* root;
+
+   public:
+    /** Initialize your data structure here. */
+    Trie() : root(new TrieNode()) {}
+
+    /** Inserts a word into the trie. */
+    void insert(string word) {
+        TrieNode* tmp = root;
+        for (int i = 0; i < word.size(); ++i) {
+            if (tmp->childNode[word[i] - 'a'] == nullptr)
+                tmp->childNode[word[i] - 'a'] = new TrieNode();
+            tmp = tmp->childNode[word[i] - 'a'];
+        }
+        tmp->isVal = true;
+    }
+
+    /** Returns if the word is in the trie. */
+    bool search(string word) {
+        TrieNode* tmp = root;
+        for (int i = 0; i < word.size(); ++i) {
+            if (tmp == nullptr) break;
+            tmp = tmp->childNode[word[i] - 'a'];
+        }
+        return tmp ? tmp->isVal : false;
+    }
+
+    /** Returns if there is any word in the trie that starts with the given
+     * prefix. */
+    bool startsWith(string prefix) {
+        TrieNode* tmp = root;
+        for (int i = 0; i < prefix.size(); ++i) {
+            if (tmp == nullptr) break;
+            tmp = tmp->childNode[prefix[i] - 'a'];
+        }
+        return tmp;
+    }
+};
