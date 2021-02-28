@@ -5,6 +5,7 @@
         "numeric": "cpp",
         "stack": "cpp",
         "utility": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "string": "cpp"
     }
 }
